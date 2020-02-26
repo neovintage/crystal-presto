@@ -1,0 +1,9 @@
+name: presto.cr
+version: 0.1.0
+
+authors:
+  - rimas silkaitis <neovintage@github.com>
+
+crystal: 0.32.1
+
+license: MIT
