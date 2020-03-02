@@ -4,7 +4,7 @@ require "uri"
 require "./presto/*"
 
 module Presto
-  HEADERS = {
+  HEADERS = HTTP::Headers{
     "User-Agent" => "presto-crystal/#{VERSION}"
   }
 
@@ -12,9 +12,13 @@ module Presto
     protected getter connection
 
     def initialize(context)
-      super
+      super(context)
       context.uri.scheme = "http"
       @connection = HTTP::Client.new(context.uri)
+      @connection.basic_auth(context.uri.user, context.uri.password)
+      @connection.before_request do |request|
+        request.headers["User-Agent"] = "presto-crystal"
+      end
     end
 
     def build_unprepared_statement(query) : Statement
@@ -37,7 +41,8 @@ module Presto
 
     protected def perform_query(args : Enumerable) : ResultSet
       response = conn.post("/v1/statement", headers: nil, body: @sql)
-      puts response.status_code
+      # todo need a loop to wait for the result. Seems like clients are responsible for managing the response
+      # todo can likely turn this into a fiber if need be.
       ResultSet.new(self)
     end
 
