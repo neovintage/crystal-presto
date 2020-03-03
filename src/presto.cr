@@ -1,5 +1,6 @@
 require "db"
 require "http/client"
+require "json"
 require "uri"
 require "./presto/*"
 
@@ -41,12 +42,32 @@ module Presto
 
     protected def perform_query(args : Enumerable) : ResultSet
       response = conn.post("/v1/statement", headers: nil, body: @sql)
-      # todo need a loop to wait for the result. Seems like clients are responsible for managing the response
-      # todo can likely turn this into a fiber if need be.
+
+      # cluster accepted the query let's wait for processing
+      #
+      if response.status_code == 200
+        query = JSON.parse(response.body)
+        start_time = Time.monotonic
+        retries = 0
+
+        loop do
+          response = conn.get(query["nextUri"].to_s)
+          query = JSON.parse(response.body)
+
+          if (Time.monotonic - start_time) > retry_timeout || response.status_code != 200 || query["stats"]["state"] == "FINISHED"
+            break
+          end
+        end
+      end
+
       ResultSet.new(self)
     end
 
     protected def perform_exec(args : Enumerable) : ::DB::ExecResult
+    end
+
+    private def retry_timeout
+      Time::Span.new(seconds: 10, nanoseconds: 0)
     end
   end
 
