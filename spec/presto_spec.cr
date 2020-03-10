@@ -1,14 +1,43 @@
 require "./spec_helper"
 
 describe Presto do
-  it "works" do
-    false.should eq(true)
-  end
-
   it "should query a cluster" do
     DB.open(DB_URL) do |db|
       result = db.query "select * from tpch.sf1.customer limit 1"
-      puts result
+      typeof(result).should eq Presto::ResultSet
+    end
+  end
+
+  it "should return the column size" do
+    DB.open(DB_URL) do |db|
+      result = db.query "select * from tpch.sf1.customer limit 1"
+      result.column_count.should eq 8
+    end
+  end
+
+  it "should return column even if data doesnt exist" do
+    DB.open(DB_URL) do |db|
+      result = db.query "select * from tpch.sf1.customer where name = 'nonsense' limit 1"
+      result.column_count.should eq 8
+    end
+  end
+
+  it "should have an empty data array if nothing is returned" do
+    DB.open(DB_URL) do |db|
+      result = db.query "select * from tpch.sf1.customer where name = 'nonsense' limit 1"
+      result.data.size.should eq 0
+    end
+  end
+
+  it "should be able to return rows" do
+    DB.open(DB_URL) do |db|
+      db.query "select * from tpch.sf1.customer where name = 'Customer#000000001' limit 1" do |rs|
+        rs.row_count.should eq 1
+        rs.column_name(0).should eq "custkey"
+        rs.each do
+          rs.read(Int32).should eq 1
+        end
+      end
     end
   end
 end

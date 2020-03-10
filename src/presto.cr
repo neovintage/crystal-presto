@@ -12,6 +12,7 @@ module Presto
   class Connection < ::DB::Connection
     protected getter connection
 
+    # todo throw error if username isnt defined. that's required
     def initialize(context)
       super(context)
       context.uri.scheme = "http"
@@ -32,6 +33,17 @@ module Presto
   end
 
   class Statement < ::DB::Statement
+    STATES = [
+      "QUEUED",
+      "PLANNING",
+      "STARTING",
+      "RUNNING",
+      "BLOCKED",
+      "FINISHING",
+      "FINISHED",
+      "FAILED"
+    ]
+
     def initialize(connection, @sql : String)
       super(connection)
     end
@@ -41,50 +53,73 @@ module Presto
     end
 
     protected def perform_query(args : Enumerable) : ResultSet
-      response = conn.post("/v1/statement", headers: nil, body: @sql)
+      start_time = Time.monotonic
+      timeout = statement_timeout
+      http_response = conn.post("/v1/statement", headers: nil, body: @sql)
+      json = uninitialized JSON::Any
 
-      # cluster accepted the query let's wait for processing
-      #
-      if response.status_code == 200
-        query = JSON.parse(response.body)
-        start_time = Time.monotonic
-        retries = 0
+      loop do
+        json = JSON.parse(http_response.body)
+        break if (Time.monotonic - start_time) > timeout || json["nextUri"]?.nil? || json["data"]?
 
-        loop do
-          response = conn.get(query["nextUri"].to_s)
-          query = JSON.parse(response.body)
-
-          if (Time.monotonic - start_time) > retry_timeout || response.status_code != 200 || query["stats"]["state"] == "FINISHED"
-            break
-          end
-        end
+        http_response = conn.get(json["nextUri"].to_s)
       end
 
-      ResultSet.new(self)
+      puts json
+      ResultSet.new(self, json)
     end
 
     protected def perform_exec(args : Enumerable) : ::DB::ExecResult
     end
 
-    private def retry_timeout
+    # todo enable this to be overriden by user
+    private def statement_timeout
       Time::Span.new(seconds: 10, nanoseconds: 0)
     end
   end
 
   class ResultSet < ::DB::ResultSet
+    getter query_results
+    getter data : JSON::Any
+    getter columns : JSON::Any
+    getter row_count : Int32
+
+    def initialize(statement, @query_results : JSON::Any)
+      super(statement)
+      @column_index = -1
+      @row_index = -1
+
+      @data = @query_results["data"]? || JSON.parse("[]")
+      @columns = @query_results["columns"]? || JSON.parse("[]")
+      @row_count = @data.size.as(Int32)
+
+      # todo parse the columns for the data types into hash to make type conversion easier
+    end
+
     def move_next : Bool
+      return false if @end
+
+      if @row_index < @row_count
+        @row_index += 1
+        @column_index = 0
+        true
+      else
+        @end = true
+        false
+      end
     end
 
     def column_count : Int32
-    end
-
-    def column_index(index : Int32)
+      @columns.size
     end
 
     def column_name(index : Int32) : String
+      @columns[index]["name"].to_s
     end
 
     def read
+      @column_index += 1
+      return @data[@row_index][@column_index]
     end
   end
 

@@ -1,4 +1,4 @@
-# presto.cr
+# PrestoDB Crystal Driver
 
 prestodb crystal driver
 
@@ -17,7 +17,7 @@ prestodb crystal driver
 ## Usage
 
 ```crystal
-require "presto.cr"
+require "presto"
 ```
 
 ## Development
