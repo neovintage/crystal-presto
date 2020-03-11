@@ -1,0 +1,22 @@
+name: Run Specs
+
+on: [push, pull_request]
+
+jobs:
+  spec:
+    runs-on: ubuntu-latest
+
+    container:
+      image: crystallang/crystal:latest
+
+    services:
+      presto:
+        image: prestosql/presto:330
+        ports:
+          - 8080:8080
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run crystal-presto specs
+        run: |
+          crystal spec

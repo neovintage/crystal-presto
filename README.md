@@ -9,7 +9,7 @@ prestodb crystal driver
    ```yaml
    dependencies:
      presto.cr:
-       github: neovintage/presto.cr
+       github: neovintage/crystal-presto
    ```
 
 2. Run `shards install`
@@ -18,6 +18,15 @@ prestodb crystal driver
 
 ```crystal
 require "presto"
+
+DB.open("presto://username:@localhost:8080/tpch/sf1") do |db|
+  db.query("select * from customer limit 1") do |q|
+    puts q.row_count
+    q.each do |rs|
+      puts "#{rs.column_name(0)}: #{rs.read}"
+    end
+  end
+end
 ```
 
 ## Development

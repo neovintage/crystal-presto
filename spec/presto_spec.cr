@@ -35,7 +35,7 @@ describe Presto do
         rs.row_count.should eq 1
         rs.column_name(0).should eq "custkey"
         rs.each do
-          rs.read(Int32).should eq 1
+          rs.read.as_i.should eq 1
         end
       end
     end

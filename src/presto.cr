@@ -65,7 +65,6 @@ module Presto
         http_response = conn.get(json["nextUri"].to_s)
       end
 
-      puts json
       ResultSet.new(self, json)
     end
 
@@ -91,7 +90,7 @@ module Presto
 
       @data = @query_results["data"]? || JSON.parse("[]")
       @columns = @query_results["columns"]? || JSON.parse("[]")
-      @row_count = @data.size.as(Int32)
+      @row_count = @data.size
 
       # todo parse the columns for the data types into hash to make type conversion easier
     end
@@ -99,9 +98,9 @@ module Presto
     def move_next : Bool
       return false if @end
 
-      if @row_index < @row_count
+      if @row_index < @row_count - 1
         @row_index += 1
-        @column_index = 0
+        @column_index = -1
         true
       else
         @end = true
