@@ -17,6 +17,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Install Shards
+        run: |
+          shards install
       - name: Run crystal-presto specs
         run: |
           crystal spec
