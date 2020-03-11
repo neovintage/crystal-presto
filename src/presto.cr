@@ -6,7 +6,7 @@ require "./presto/*"
 
 module Presto
   HEADERS = HTTP::Headers{
-    "User-Agent" => "presto-crystal/#{VERSION}"
+    "User-Agent" => "presto-crystal/#{VERSION}",
   }
 
   class Connection < ::DB::Connection
@@ -41,7 +41,7 @@ module Presto
       "BLOCKED",
       "FINISHING",
       "FINISHED",
-      "FAILED"
+      "FAILED",
     ]
 
     def initialize(connection, @sql : String)
