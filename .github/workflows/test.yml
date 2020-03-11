@@ -14,19 +14,24 @@ jobs:
         image: prestosql/presto:330
         ports:
           - 8080:8080
+        options: >-
+          --health-cmd "presto --execute \"SELECT 'success'\" | grep \"success\""
+          --health-interval=10s
+          --health-timeout=10s
+          --health-retries=5
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Crystal Version
-        run: |
-          crystal --version
-      - name: Install Shards
-        run: |
-          shards install
-      - name: Sleep for 30 seconds
-        uses: jakejarvis/wait-action@master
-        with:
-          time: '30s'
-      - name: Run crystal-presto specs
-        run: |
-          crystal spec
+    - uses: actions/checkout@v2
+    - name: Crystal Version
+      run: |
+        crystal --version
+    - name: Install Shards
+      run: |
+        shards install
+    - name: Run crystal-presto specs
+      run: |
+        crystal spec
+      env:
+        PRESTO_HOST: presto
+        PRESTO_PORT: 8080
+
