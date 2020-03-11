@@ -17,9 +17,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Crystal Version
+        run: |
+          crystal --version
       - name: Install Shards
         run: |
           shards install
+      - name: Sleep for 30 seconds
+        uses: jakejarvis/wait-action@master
+        with:
+          time: '30s'
       - name: Run crystal-presto specs
         run: |
           crystal spec
