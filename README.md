@@ -1,5 +1,7 @@
 # PrestoDB Crystal Driver
 
+![CI Status](https://github.com/neovintage/crystal-presto/workflows/Run%20Specs/badge.svg?branch=master)
+
 prestodb crystal driver
 
 ## Installation
