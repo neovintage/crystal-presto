@@ -5,7 +5,7 @@ require "uri"
 require "./presto/*"
 
 module Presto
-  HEADERS = HTTP::Headers{
+  DEFAULT_HEADERS = HTTP::Headers{
     "User-Agent" => "presto-crystal/#{VERSION}",
   }
 
@@ -18,6 +18,10 @@ module Presto
       context.uri.scheme = "http"
       @connection = HTTP::Client.new(context.uri)
       @connection.basic_auth(context.uri.user, context.uri.password)
+
+      @options = HTTP::Headers.new
+
+      # todo need to have defaults that the user can then override
       @connection.before_request do |request|
         request.headers["User-Agent"] = "presto-crystal"
       end
@@ -33,16 +37,42 @@ module Presto
   end
 
   class Statement < ::DB::Statement
-    STATES = [
-      "QUEUED",
-      "PLANNING",
-      "STARTING",
-      "RUNNING",
-      "BLOCKED",
-      "FINISHING",
-      "FINISHED",
-      "FAILED",
-    ]
+    PRESTO_HEADERS = {
+      "user" => "X-Presto-User",
+      "source" => "X-Presto-Source",
+      "catalog" => "X-Presto-Catalog",
+      "path" => "X-Presto-Path",
+      "time_zone" => "X-Presto-Time-Zone",
+      "language" => "X-Presto-Language",
+      "trace_token" => "X-Presto-Trace-Token",
+      "session" => "X-Presto-Session",
+      "set_catalog" => "X-Presto-Set-Catalog",
+      "set_schema" => "X-Presto-Set-Schema",
+      "set_path" => "X-Presto-Set-Path",
+      "set_session" => "X-Presto-Set-Session",
+      "clear_session" => "X-Presto-Clear-Session",
+      "set_role" => "X-Presto-Set-Role",
+      "role" => "X-Presto-Role",
+      "prepared_statement" => "X-Presto-Prepared-Statement",
+      "added_prepare" => "X-Presto-Added-Prepare",
+      "deallocated_prepare" => "X-Presto-Deallocated-Prepare",
+      "transaction_id" => "X-Presto-Transaction-Id",
+      "started_transaction_id" => "X-Presto-Started-Transaction-Id",
+      "clear_transaction_id" => "X-Presto-Clear-Transaction-Id",
+      "client_info" => "X-Presto-Client-Info",
+      "client_tags" => "X-Presto-Client-Tags",
+      "client_capabilities" => "X-Presto-Client-Capabilities",
+      "resource_estimate" => "X-Presto-Resource-Estimate",
+      "extra_credential" => "X-Presto-Extra-Credential",
+
+      "current_state" => "X-Presto-Current-State",
+      "max_wait" => "X-Presto-Max-Wait",
+      "max_size" => "X-Presto-Max-Size",
+      "task_instance_id" => "X-Presto-Task-Instance-Id",
+      "page_token" => "X-Presto-Page-Sequence-Id",
+      "page_end_sequence_id" => "X-Presto-Page-End-Sequence-Id",
+      "buffer_complete" => "X-Presto-Buffer-Complete",
+    }
 
     def initialize(connection, @sql : String)
       super(connection)
@@ -52,6 +82,7 @@ module Presto
       connection.as(Connection).connection
     end
 
+    # todo the args in enumerable should have the options that can be overridden
     protected def perform_query(args : Enumerable) : ResultSet
       start_time = Time.monotonic
       timeout = statement_timeout
@@ -60,12 +91,12 @@ module Presto
 
       loop do
         json = JSON.parse(http_response.body)
-        break if (Time.monotonic - start_time) > timeout || json["nextUri"]?.nil? || json["data"]?
+        break if ((Time.monotonic - start_time) > timeout) || json["nextUri"]?.nil? || json["data"]?
 
         http_response = conn.get(json["nextUri"].to_s)
       end
 
-      ResultSet.new(self, json)
+      ResultSet.new(self, json, http_response)
     end
 
     protected def perform_exec(args : Enumerable) : ::DB::ExecResult
@@ -75,6 +106,10 @@ module Presto
     private def statement_timeout
       Time::Span.new(seconds: 10, nanoseconds: 0)
     end
+
+    private def parse_headers(options)
+
+    end
   end
 
   class ResultSet < ::DB::ResultSet
@@ -83,7 +118,7 @@ module Presto
     getter columns : JSON::Any
     getter row_count : Int32
 
-    def initialize(statement, @query_results : JSON::Any)
+    def initialize(statement, @query_results : JSON::Any, response : HTTP::Client::Response)
       super(statement)
       @column_index = -1
       @row_index = -1
@@ -91,6 +126,8 @@ module Presto
       @data = @query_results["data"]? || JSON.parse("[]")
       @columns = @query_results["columns"]? || JSON.parse("[]")
       @row_count = @data.size
+
+      @http_response = response
 
       # todo parse the columns for the data types into hash to make type conversion easier
     end
@@ -119,6 +156,10 @@ module Presto
     def read
       @column_index += 1
       return @data[@row_index][@column_index]
+    end
+
+    def headers
+      @http_response.headers
     end
   end
 

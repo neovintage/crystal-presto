@@ -40,4 +40,13 @@ describe Presto do
       end
     end
   end
+
+  it "should show the response headers" do
+    DB.open(DB_URL) do |db|
+      db.query "select * from tpch.sf1.customer where name = 'Customer#000000001' limit 1" do |rs|
+        typeof(rs.headers).should eq HTTP::Headers
+        rs.headers.should_not be_nil
+      end
+    end
+  end
 end
