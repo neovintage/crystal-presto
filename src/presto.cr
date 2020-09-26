@@ -19,7 +19,7 @@ module Presto
     #      a query basis you should be able to override the options.
     protected def perform_query(args : Enumerable) : ResultSet
       start_time = Time.monotonic
-      timeout = statement_timeout
+      timeout = connection.options.statement_timeout
 
       http_response = http_client.post("/v1/statement", headers: connection.options.http_headers, body: @sql)
       json = uninitialized JSON::Any
@@ -35,11 +35,6 @@ module Presto
     end
 
     protected def perform_exec(args : Enumerable) : ::DB::ExecResult
-    end
-
-    # todo enable this to be overriden by user
-    private def statement_timeout
-      Time::Span.new(seconds: 10, nanoseconds: 0)
     end
   end
 

@@ -49,7 +49,7 @@ module Presto
   #
   struct ConnectionOptions
     @http_headers : HTTP::Headers
-    @statement_timeout : Time::Span
+    getter statement_timeout : Time::Span
 
     def initialize
       @http_headers = DEFAULT_HEADERS.clone
