@@ -49,9 +49,11 @@ module Presto
   #
   struct ConnectionOptions
     @http_headers : HTTP::Headers
+    @statement_timeout : Time::Span
 
     def initialize
       @http_headers = DEFAULT_HEADERS.clone
+      @statement_timeout = Time::Span.new(seconds: 10)
     end
 
     # This is used in situations where we're parsing the params from the
@@ -59,16 +61,49 @@ module Presto
     #
     def initialize(uri : URI)
       @http_headers = DEFAULT_HEADERS.clone
+      @statement_timeout = Time::Span.new(seconds: 10)
       if !uri.query.nil?
         params = HTTP::Params.parse(uri.query.not_nil!)
         map_keys(params)
       end
     end
 
+    def []=(key, value : Int32)
+      if key == "statement_timeout"
+        @statement_timeout = Time::Span.new(seconds: value)
+      end
+    end
+
     def []=(key, value)
-      k = PRESTO_HEADERS[key]?
-      if !k.nil?
-        @http_headers[key] = value
+      if key != "statement_timeout"
+        k = PRESTO_HEADERS[key]?
+        if !k.nil?
+          @http_headers[key] = value
+        end
+      end
+    end
+
+    def [](key)
+      if key == "statement_timeout"
+        @statement_timeout.total_seconds
+      else
+        @http_headers[key]
+      end
+    end
+
+    def []?(key)
+      if key == "statement_timeout"
+        @statement_timeout.total_seconds
+      else
+        @http_headers[key]?
+      end
+    end
+
+    def has_key?(key)
+      if key == "statement_timeout"
+        true
+      else
+        @http_headers.has_key?(key)
       end
     end
 
@@ -91,10 +126,6 @@ module Presto
         end
       end
     end
-
-    delegate "[]", to: @http_headers
-    delegate "[]?", to: @http_headers
-    delegate "has_key?", to: @http_headers
   end
 
   class Connection < ::DB::Connection

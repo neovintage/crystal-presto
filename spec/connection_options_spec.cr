@@ -25,4 +25,21 @@ describe Presto::ConnectionOptions do
     opts.has_key?("whatever").should be_false
   end
 
+  it "should have a default statement timeout" do
+    opts = Presto::ConnectionOptions.new
+    opts["statement_timeout"].should eq 10
+  end
+
+  it "should be able to set a statement timeout" do
+    opts = Presto::ConnectionOptions.new
+    opts["statement_timeout"].should eq 10
+    opts["statement_timeout"] = 300
+    opts["statement_timeout"].should eq 300
+  end
+
+  it "should not include the statement timeout in the http_headers" do
+    opts = Presto::ConnectionOptions.new
+    opts.http_headers.has_key?("statement_timeout").should be_false
+  end
+
 end
