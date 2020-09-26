@@ -41,10 +41,6 @@ module Presto
     private def statement_timeout
       Time::Span.new(seconds: 10, nanoseconds: 0)
     end
-
-    private def parse_headers(options)
-
-    end
   end
 
   class ResultSet < ::DB::ResultSet
