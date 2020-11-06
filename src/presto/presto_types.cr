@@ -6,22 +6,46 @@ module Presto
 
     property name : String
     property type : String
+
+    @[JSON::Field(key: "typeSignature")]
+    property type_signature : TypeSignature
+  end
+
+  struct TypeSignature
+    include JSON::Serializable
+
+    @[JSON::Field(key: "rawType")]
+    property raw_type : String
+    property arguments : Array(TypeSignatureParameter)
+  end
+
+  struct TypeSignatureParameter
+    include JSON::Serializable
+
+    property kind : String
+    property value : JSON::Any
   end
 
   struct PrestoWarning
+    include JSON::Serializable
+
+    property message : String
+
+    @[JSON::Field(key: "warningCode")]
+    property warning_code : String
   end
 
   struct ErrorLocation
     include JSON::Serializable
 
     @[JSON::Field(key: "lineNumber")]
-    property line_number : Int
+    property line_number : Int32
 
     @[JSON::Field(key: "columnNumber")]
-    property column_number : Int
+    property column_number : Int32
   end
 
-  struct FailureInfo
+  class FailureInfo
     include JSON::Serializable
 
     property type : String
@@ -34,7 +58,7 @@ module Presto
     property error_location : ErrorLocation
   end
 
-  struct StageStats
+  class StageStats
     include JSON::Serializable
 
     property state : String
@@ -48,7 +72,7 @@ module Presto
     property total_splits : Int32
 
     @[JSON::Field(key: "queuedSplits")]
-    property queued_splits : Int3sde2
+    property queued_splits : Int32
 
     @[JSON::Field(key: "runningSplits")]
     property running_splits : Int32
@@ -69,7 +93,7 @@ module Presto
     property processed_bytes : Float32
 
     @[JSON::Field(key: "physicalInputBytes")]
-    property physical_input_bytes : Float32
+    property physical_input_bytes : Float32?
 
     @[JSON::Field(key: "subStages")]
     property sub_stages : Array(StageStats)
@@ -79,7 +103,8 @@ module Presto
     include JSON::Serializable
 
     property state : String
-    property queued : String
+    property queued : Bool
+    property scheduled : Bool
     property nodes : Int32
 
     @[JSON::Field(key: "totalSplits")]
@@ -107,10 +132,7 @@ module Presto
     property processed_bytes : Float32
 
     @[JSON::Field(key: "physicalInputBytes")]
-    property physical_input_bytes : Float32
-
-    @[JSON::Field(key: "subStages")]
-    property sub_stages : Array(StageStats)
+    property physical_input_bytes : Float32?
 
     @[JSON::Field(key: "queuedTimeMillis")]
     property queued_time_milliseconds : Float32
@@ -122,10 +144,10 @@ module Presto
     property peak_memory_bytes : Float32
 
     @[JSON::Field(key: "spilledBytes")]
-    property spilledBytes : Float32
+    property spilled_bytes : Float32
 
     @[JSON::Field(key: "rootStage")]
-    property rootStage : StageStats
+    property root_stage : StageStats
   end
 
   struct QueryError
@@ -158,7 +180,7 @@ module Presto
 
     property id : String
     property stats : StatementStats
-    property error : QueryError
+    property error : QueryError?
     property warnings : Array(PrestoWarning)?
     property columns : Array(PrestoColumn)
 

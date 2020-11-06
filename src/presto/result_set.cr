@@ -16,6 +16,9 @@ module Presto
       @column_index = -1
       @row_index = -1
 
+      puts response.body
+      @query_results_one = QueryResult.from_json(response.body)
+
       @data = @query_results["data"]? || JSON.parse("[]")
       @columns = @query_results["columns"]? || JSON.parse("[]")
       @row_count = @data.size
