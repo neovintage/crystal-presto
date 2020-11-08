@@ -50,8 +50,8 @@ module Presto
 
     property type : String
     property message : String
-    property cause : FailureInfo
-    property supressed : Array(FailureInfo)
+    property cause : FailureInfo?
+    property supressed : Array(FailureInfo)?
     property stack : Array(String)
 
     @[JSON::Field(key: "errorLocation")]
@@ -147,7 +147,7 @@ module Presto
     property spilled_bytes : Float32
 
     @[JSON::Field(key: "rootStage")]
-    property root_stage : StageStats
+    property root_stage : StageStats?
   end
 
   struct QueryError
@@ -156,7 +156,7 @@ module Presto
     property message : String
 
     @[JSON::Field(key: "sqlState")]
-    property sql_state : String
+    property sql_state : String?
 
     @[JSON::Field(key: "errorCode")]
     property error_code : Int32
@@ -171,7 +171,7 @@ module Presto
     property error_location : ErrorLocation?
 
     @[JSON::Field(key: "failureInfo")]
-    property failureInfo : FailureInfo
+    property failure_info : FailureInfo
   end
 
   class QueryResult
@@ -182,12 +182,12 @@ module Presto
     property stats : StatementStats
     property error : QueryError?
     property warnings : Array(PrestoWarning)?
-    property columns : Array(PrestoColumn)
+    property columns : Array(PrestoColumn)?
 
     # Data is left as JSON::Any because the serialization in Crystal types
     # will happen lazily at the time the row is read.
     #
-    property data : JSON::Any?
+    property data : Array(JSON::Any?) = [] of JSON::Any?
 
     @[JSON::Field(key: "updateCount")]
     property update_count : Int64?

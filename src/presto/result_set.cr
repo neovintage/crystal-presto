@@ -6,26 +6,16 @@ module Presto
   # todo use the query_results struct when getting information back from presto
   class ResultSet < ::DB::ResultSet
     getter query_results
-    getter data : JSON::Any
-    getter columns : JSON::Any
     getter row_count : Int32
     getter request_options : Presto::ConnectionOptions
 
-    def initialize(statement, @query_results : JSON::Any, response : HTTP::Client::Response, @request_options)
+    def initialize(statement, @query_results : QueryResult, response : HTTP::Client::Response, @request_options)
       super(statement)
       @column_index = -1
       @row_index = -1
-
-      puts response.body
-      @query_results_one = QueryResult.from_json(response.body)
-
-      @data = @query_results["data"]? || JSON.parse("[]")
-      @columns = @query_results["columns"]? || JSON.parse("[]")
-      @row_count = @data.size
+      @row_count = @query_results.data.size
 
       @http_response = response
-
-      # todo parse the columns for the data types into hash to make type conversion easier
     end
 
     def move_next : Bool
@@ -42,17 +32,25 @@ module Presto
     end
 
     def column_count : Int32
-      @columns.size
+      if @query_results.columns.nil?
+        0
+      else
+        @query_results.columns.not_nil!.size
+      end
     end
 
     def column_name(index : Int32) : String
-      @columns[index]["name"].to_s
+      if @query_results.columns.nil?
+        ""
+      else
+        @query_results.columns.not_nil![index].name
+      end
     end
 
     def read
       @column_index += 1
       # todo serialize the types to crystal types here before returning the row
-      return @data[@row_index][@column_index]
+      return @query_results.data[@row_index].not_nil![@column_index]
     end
 
     def response_headers

@@ -29,7 +29,7 @@ describe Presto do
   it "should have an empty data array if nothing is returned" do
     DB.open(DB_URL) do |db|
       result = db.query "select * from tpch.sf1.customer where name = 'nonsense' limit 1"
-      result.data.size.should eq 0
+      result.query_results.data.size.should eq 0
     end
   end
 

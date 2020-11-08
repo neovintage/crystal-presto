@@ -22,17 +22,17 @@ module Presto
       timeout = connection.options.statement_timeout
 
       http_response = http_client.post("/v1/statement", headers: connection.options.http_headers, body: @sql)
-      json = uninitialized JSON::Any
+      query_result = uninitialized QueryResult
 
       loop do
-        json = JSON.parse(http_response.body)
+        query_result = QueryResult.from_json(http_response.body)
         # todo there could be an error that would result in this failing
-        break if ((Time.monotonic - start_time) > timeout) || json["nextUri"]?.nil? || json["data"]?
+        break if ((Time.monotonic - start_time) > timeout) || query_result.next_uri.nil? || !query_result.data.empty?
 
-        http_response = http_client.get(json["nextUri"].to_s, headers: connection.options.http_headers)
+        http_response = http_client.get(query_result.next_uri.to_s, headers: connection.options.http_headers)
       end
 
-      ResultSet.new(self, json, http_response, connection.options)
+      ResultSet.new(self, query_result, http_response, connection.options)
     end
 
     protected def perform_exec(args : Enumerable) : ::DB::ExecResult
