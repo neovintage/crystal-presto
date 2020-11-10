@@ -4,6 +4,16 @@ require "../src/presto"
 DB_URL = ENV["DATABASE_URL"]? ||
           ENV["PRESTO_HOST"]? && ENV["PRESTO_PORT"]? ? "presto://presto:@#{ENV["PRESTO_HOST"]}:#{ENV["PRESTO_PORT"]}/tpch/sf1" : "presto://presto:@localhost:8080/tpch/sf1"
 
+def test_decode(name, query, crystal_object, file = __FILE__, line = __LINE__)
+  it name, file, line do
+    DB.open(DB_URL) do |db|
+      result = db.query "select #{query}"
+      val = result.read
+      val.should eq(crystal_object)
+    end
+  end
+end
+
 def presto_queued_query_json
   <<-JSON
   {

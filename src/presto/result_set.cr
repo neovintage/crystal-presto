@@ -3,7 +3,6 @@ module Presto
   # todo because of the way presto works all the data gets returned at once we don't have a cursor
   #      consider do the serialization at the time the data comes back.
   #
-  # todo use the query_results struct when getting information back from presto
   class ResultSet < ::DB::ResultSet
     getter query_results
     getter row_count : Int32
@@ -40,17 +39,20 @@ module Presto
     end
 
     def column_name(index : Int32) : String
-      if @query_results.columns.nil?
-        ""
-      else
+      #if @query_results.columns.nil?
+        #""
+      #else
         @query_results.columns.not_nil![index].name
-      end
+      #end
     end
 
     def read
       @column_index += 1
+      return Decoder.decode_value(@query_results, @row_index, @column_index)
+
+      #return @query_results.decode_value(@row_index, @column_index)
       # todo serialize the types to crystal types here before returning the row
-      return @query_results.data[@row_index].not_nil![@column_index]
+      #return @query_results.data[@row_index].not_nil![@column_index]
     end
 
     def response_headers
