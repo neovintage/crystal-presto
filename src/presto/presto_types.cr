@@ -55,7 +55,7 @@ module Presto
     property stack : Array(String)
 
     @[JSON::Field(key: "errorLocation")]
-    property error_location : ErrorLocation
+    property error_location : ErrorLocation?
   end
 
   class StageStats
