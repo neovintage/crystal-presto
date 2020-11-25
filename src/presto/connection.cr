@@ -158,6 +158,11 @@ module Presto
       Statement.new(self, query)
     end
 
+    def server_info
+      result = @connection.get("/v1/info", headers: @options.http_headers)
+      ServerInfo.from_json(result.body)
+    end
+
     private def set_scheme(uri)
       use_ssl = uri.query_params["SSL"]?
       if use_ssl == "true"
