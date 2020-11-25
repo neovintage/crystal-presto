@@ -93,4 +93,9 @@ describe Presto do
     end
   end
 
+  it "should throw an error if username doesnt exist" do
+    expect_raises(Presto::Error, "Username is a required field") {
+      DB.open("presto://localhost:8080/tpch/sf1")
+    }
+  end
 end

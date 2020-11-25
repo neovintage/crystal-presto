@@ -28,7 +28,9 @@ module Presto
         query_result = QueryResult.from_json(http_response.body)
 
         # todo there could be an error that would result in this failing
-        break if ((Time.monotonic - start_time) > timeout) || query_result.next_uri.nil? || !query_result.data.empty?
+        break if ((Time.monotonic - start_time) > timeout) ||
+                 query_result.next_uri.nil? ||
+                 !query_result.data.empty?
 
         http_response = http_client.get(query_result.next_uri.to_s, headers: connection.options.http_headers)
       end

@@ -133,9 +133,13 @@ module Presto
     getter http_uri : URI
     getter options : Presto::ConnectionOptions
 
-    # todo throw error if username isnt defined. that's required
     def initialize(context)
       super(context)
+
+      # Presto requires a username
+      if context.uri.user.nil?
+        raise Error.new("Username is a required field")
+      end
 
       @http_uri = context.uri.dup
       @http_uri.scheme = set_scheme(@http_uri)

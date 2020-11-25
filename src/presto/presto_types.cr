@@ -1,6 +1,9 @@
 module Presto
   alias PrestoValue = String | Nil | Bool | Int32 | Int64 | Float32 | Float64 | Time | JSON::Any
 
+  class Error < ::Exception
+  end
+
   struct PrestoColumn
     include JSON::Serializable
 
