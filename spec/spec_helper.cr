@@ -9,10 +9,6 @@ def test_decode(name, query, crystal_object, file = __FILE__, line = __LINE__)
     DB.open(DB_URL) do |db|
       result = db.query "select #{query}"
       val = result.read
-
-      puts typeof(crystal_object)
-      puts typeof(val)
-
       val.should eq(crystal_object)
     end
   end

@@ -49,7 +49,7 @@ module Presto
     include JSON::Serializable
 
     property type : String
-    property message : String
+    property message : String?
     property cause : FailureInfo?
     property supressed : Array(FailureInfo)?
     property stack : Array(String)

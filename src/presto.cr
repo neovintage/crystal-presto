@@ -27,8 +27,6 @@ module Presto
       loop do
         query_result = QueryResult.from_json(http_response.body)
 
-        puts http_response.body
-
         # todo there could be an error that would result in this failing
         break if ((Time.monotonic - start_time) > timeout) || query_result.next_uri.nil? || !query_result.data.empty?
 
@@ -38,6 +36,7 @@ module Presto
       ResultSet.new(self, query_result, http_response, connection.options)
     end
 
+    # todo
     protected def perform_exec(args : Enumerable) : ::DB::ExecResult
     end
 
